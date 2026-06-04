@@ -11,6 +11,7 @@ class KhPayService
     protected string $apiKey;
     protected string $webhookSecret;
     protected bool $verifySsl;
+    protected bool $testMode;
 
     public function __construct()
     {
@@ -18,6 +19,7 @@ class KhPayService
         $this->apiKey = (string) config('services.khpay.api_key', '');
         $this->webhookSecret = (string) config('services.khpay.webhook_secret', '');
         $this->verifySsl = (bool) config('services.khpay.verify', true);
+        $this->testMode = (bool) config('services.khpay.test_mode', true);
     }
 
     /**
@@ -26,6 +28,12 @@ class KhPayService
     protected function newRequest()
     {
         $http = Http::withToken($this->apiKey)->acceptJson();
+        
+        if ($this->testMode) {
+            $http = $http->withHeaders([
+                'X-Test-Mode' => 'true'
+            ]);
+        }
         
         if (! $this->verifySsl) {
             $http = $http->withoutVerifying();

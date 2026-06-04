@@ -62,7 +62,9 @@ return [
         'api_key' => env('KHPAY_API_KEY'),
         'webhook_secret' => env('KHPAY_WEBHOOK_SECRET'),
         'verify' => filter_var(env('KHPAY_VERIFY', true), FILTER_VALIDATE_BOOLEAN),
+        'test_mode' => filter_var(env('KHPAY_TEST_MODE', true), FILTER_VALIDATE_BOOLEAN),
     ],
+
 
 
 
