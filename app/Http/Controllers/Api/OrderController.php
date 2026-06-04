@@ -362,6 +362,15 @@ class OrderController extends Controller
         }
 
         try {
+            app(TelegramOrderService::class)->sendOrderMessage($order);
+        } catch (\Throwable $exception) {
+            Log::warning('Failed to send Telegram order notification.', [
+                'order_id' => $order->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        try {
             event(new AdminOrderCreated($order));
         } catch (\Throwable $exception) {
             Log::warning('Failed to broadcast admin order event.', [

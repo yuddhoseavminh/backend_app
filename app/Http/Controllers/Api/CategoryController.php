@@ -38,6 +38,9 @@ class CategoryController extends Controller
         $imagePath = null;
         if ($request->hasFile('image')) {
             $storedPath = $request->file('image')->store('categories', 'public');
+            if (!$storedPath) {
+                return response()->json(['message' => 'Image upload failed. Please try again.'], 500);
+            }
             $imagePath = 'storage/'.$storedPath;
         }
 
@@ -88,6 +91,9 @@ class CategoryController extends Controller
             }
 
             $storedPath = $request->file('image')->store('categories', 'public');
+            if (!$storedPath) {
+                return response()->json(['message' => 'Image upload failed. Please try again.'], 500);
+            }
             $category->image = 'storage/'.$storedPath;
         }
 
