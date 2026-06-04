@@ -211,7 +211,10 @@ class PaymentController extends Controller
     public function khpayCallback(Request $request)
     {
         $khpay = app(KhPayService::class);
-        $signature = $request->header('X-KHPAY-Signature');
+        
+        $signature = $request->header('X-Webhook-Signature') 
+            ?? $request->header('X-Callback-Signature') 
+            ?? $request->header('X-KHPAY-Signature');
 
         if (! $signature) {
             Log::warning('KHPAY webhook callback missing signature header.');
@@ -224,11 +227,11 @@ class PaymentController extends Controller
         }
 
         $event = $request->input('event');
-        $transactionId = $request->input('transaction_id');
-        $status = strtolower($request->input('status', ''));
-        $amount = (float) $request->input('amount', 0);
-        $currency = $request->input('currency', 'USD');
-        $metadata = $request->input('metadata', []);
+        $transactionId = $request->input('data.transaction_id') ?? $request->input('transaction_id');
+        $status = strtolower($request->input('data.status') ?? $request->input('status') ?? '');
+        $amount = (float) ($request->input('data.amount') ?? $request->input('amount') ?? 0);
+        $currency = $request->input('data.currency') ?? $request->input('currency') ?? 'USD';
+        $metadata = $request->input('data.metadata') ?? $request->input('metadata') ?? [];
 
         Log::info('KHPAY Webhook received', [
             'event' => $event,
@@ -242,9 +245,14 @@ class PaymentController extends Controller
         }
 
         // Only process paid / success events
-        if ($event !== 'payment.paid' && $status !== 'paid' && $status !== 'success') {
+        $isPaidEvent = $event === 'payment.paid' 
+            || $status === 'paid' 
+            || $status === 'success';
+
+        if (! $isPaidEvent) {
             return response()->json(['message' => 'Webhook received but not processed (ignored status).']);
         }
+
 
         $khqr = KhqrTransaction::where('transaction_id', $transactionId)->first();
         $orderId = $khqr?->order_id ?? $metadata['order_id'] ?? null;

@@ -142,6 +142,11 @@ class KhPayService
             return false;
         }
 
+        // Clean signature (remove 'sha256=' prefix if present in the header)
+        if (str_starts_with($signature, 'sha256=')) {
+            $signature = substr($signature, 7);
+        }
+
         $expected = hash_hmac('sha256', $rawBody, $this->webhookSecret);
         return hash_equals($expected, $signature);
     }
