@@ -618,7 +618,70 @@
                 }
             });
 
-            loadCategories();
+            function escapeAttrOption(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            async function loadAttributeOptions() {
+                var selectMap = {
+                    storage_capacity: { id: 'variant-storage',   placeholder: 'Select storage' },
+                    color:            { id: 'variant-color',     placeholder: 'Select color' },
+                    condition:        { id: 'variant-condition', placeholder: 'Select condition' },
+                    ram:              { id: 'variant-ram',       placeholder: 'None' },
+                    ssd:              { id: 'variant-ssd',       placeholder: 'None' },
+                };
+
+                // Set placeholders immediately — selects never stay on "Loading…"
+                Object.keys(selectMap).forEach(function (type) {
+                    var sel = document.getElementById(selectMap[type].id);
+                    if (sel) sel.innerHTML = '<option value="">' + selectMap[type].placeholder + '</option>';
+                });
+
+                try {
+                    await window.adminApi.ensureCsrfCookie();
+                    var response = await window.adminApi.request('/api/product-attributes');
+                    if (!response.ok) return;
+                    var payload = await response.json();
+                    var list = Array.isArray(payload.data) ? payload.data : [];
+
+                    // Group values by type
+                    var grouped = {};
+                    list.forEach(function (item) {
+                        if (!grouped[item.type]) grouped[item.type] = [];
+                        grouped[item.type].push(item.value);
+                    });
+
+                    // Populate each select, restoring current value if already set
+                    Object.keys(selectMap).forEach(function (type) {
+                        var cfg = selectMap[type];
+                        var sel = document.getElementById(cfg.id);
+                        if (!sel) return;
+                        var current = sel.value;
+                        var values = grouped[type] || [];
+                        if (values.length > 0) {
+                            sel.innerHTML = '<option value="">' + cfg.placeholder + '</option>' +
+                                values.map(function (v) {
+                                    var e = escapeAttrOption(v);
+                                    return '<option value="' + e + '">' + e + '</option>';
+                                }).join('');
+                            if (current) sel.value = current;
+                        }
+                    });
+                } catch (e) {
+                    // placeholders already set above
+                }
+            }
+
+            // window.adminApi is defined by the layout after @yield('content'),
+            // so wait for DOMContentLoaded before making API calls.
+            document.addEventListener('DOMContentLoaded', function () {
+                loadCategories();
+                loadAttributeOptions();
+            });
             renderVariantRows();
         })();
     </script>
