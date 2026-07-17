@@ -9,12 +9,32 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Support\Facades\Schema;
 
 class AdminNotificationCampaignSender
 {
+    private ?bool $guestSchemaReady = null;
+
+    private ?bool $campaignSchemaReady = null;
+
     public function __construct(
         private readonly FirebasePushNotificationService $pushNotificationService
     ) {
+    }
+
+    /**
+     * The guest/campaign columns ship in a migration that may not have run
+     * yet on a freshly deployed server. Degrade gracefully (skip guest
+     * targeting and read stats) instead of throwing a 500 on every send.
+     */
+    private function guestSchemaReady(): bool
+    {
+        return $this->guestSchemaReady ??= Schema::hasColumn('mobile_device_tokens', 'guest_device_id');
+    }
+
+    private function campaignSchemaReady(): bool
+    {
+        return $this->campaignSchemaReady ??= Schema::hasColumn('order_tracking_notifications', 'campaign_id');
     }
 
     public function countRecipients(string $audience, array $customUserIds): int
@@ -70,23 +90,29 @@ class AdminNotificationCampaignSender
             'campaign_id' => $campaign->id,
             'audience' => $audience,
         ];
+        $canTrackCampaign = $this->campaignSchemaReady();
         $notificationAttributes = [
-            'campaign_id' => $campaign->id,
             'order_id' => $this->extractOrderId($deepLink),
             'type' => 'admin_'.str_replace(' ', '_', $normalizedType),
             'title' => (string) $campaign->title,
             'body' => (string) ($campaign->message ?? ''),
             'payload' => $basePayload,
         ];
+        if ($canTrackCampaign) {
+            $notificationAttributes['campaign_id'] = $campaign->id;
+        }
 
         if ($this->targetsRegisteredUsers($audience)) {
             $users = $this->resolveRecipients($audience, $customUserIds);
             $summary['targeted_users'] = $users->count();
-            $alreadyNotified = OrderTrackingNotification::query()
-                ->where('campaign_id', $campaign->id)
-                ->whereNotNull('user_id')
-                ->pluck('user_id')
-                ->all();
+            $alreadyNotified = [];
+            if ($canTrackCampaign) {
+                $alreadyNotified = OrderTrackingNotification::query()
+                    ->where('campaign_id', $campaign->id)
+                    ->whereNotNull('user_id')
+                    ->pluck('user_id')
+                    ->all();
+            }
             $alreadyNotified = array_flip($alreadyNotified);
 
             foreach ($users as $user) {
@@ -194,7 +220,7 @@ class AdminNotificationCampaignSender
 
     private function targetsGuestDevices(string $audience): bool
     {
-        return in_array($audience, ['all', 'guests'], true);
+        return in_array($audience, ['all', 'guests'], true) && $this->guestSchemaReady();
     }
 
     private function applyAudienceFilter(Builder $query, string $audience, array $customUserIds): void
@@ -260,7 +286,7 @@ class AdminNotificationCampaignSender
     public function receiptCounts(iterable $campaignIds): SupportCollection
     {
         $ids = collect($campaignIds)->filter()->unique()->values();
-        if ($ids->isEmpty()) {
+        if ($ids->isEmpty() || ! $this->campaignSchemaReady()) {
             return collect();
         }
 
