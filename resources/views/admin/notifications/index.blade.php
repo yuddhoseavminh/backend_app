@@ -40,7 +40,7 @@
                             <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Compose Notification') }}</h2>
                             <p class="mt-1 text-sm text-slate-500">{{ __('Create a reusable payload for announcements, alerts, documents, and order updates.') }}</p>
                         </div>
-                        <span class="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-100">{{ __('Draft mode') }}</span>
+                        <span class="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-100">{{ __('Ready to send') }}</span>
                     </div>
 
                     <form id="notification-form" class="mt-6 space-y-5" data-send-url="{{ route('admin.notifications.store', [], false) }}">
@@ -74,7 +74,7 @@
                                 <div class="mt-2 grid gap-3 sm:grid-cols-2">
                                     <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
                                         <input type="radio" name="target_mode" value="all" checked class="h-4 w-4 border-slate-300 text-primary-600 focus:ring-primary-500" />
-                                        {{ __('Everyone (incl. guests)') }}
+                                        {{ __('Customers + guest devices') }}
                                     </label>
                                     <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
                                         <input type="radio" name="target_mode" value="registered" class="h-4 w-4 border-slate-300 text-primary-600 focus:ring-primary-500" />
@@ -259,6 +259,37 @@
                 }
             }
 
+            function hasPushSetupIssue(payload) {
+                var summary = (payload && payload.summary) || {};
+                if (!summary.push_error && payload && payload.history_item && payload.history_item.summary) {
+                    summary = payload.history_item.summary;
+                }
+                return !!summary.push_error || Number(summary.push_disabled || 0) > 0;
+            }
+
+            function showSendResult(defaultSuccessTitle, payload) {
+                var message = (payload && payload.message) || 'Notification processed.';
+                if (hasPushSetupIssue(payload)) {
+                    if (window.Swal) {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Notification saved, push not delivered',
+                            text: message,
+                            confirmButtonColor: '#d97706',
+                        });
+                    } else if (window.adminToast) {
+                        window.adminToast(message, { type: 'error', duration: 9000 });
+                    }
+                    return;
+                }
+
+                if (window.adminSwalSuccess) {
+                    window.adminSwalSuccess(defaultSuccessTitle || 'Notification sent', message);
+                } else if (window.adminToast) {
+                    window.adminToast(message, { type: 'success' });
+                }
+            }
+
             function setFieldError(field, hasError) {
                 if (!field) {
                     return;
@@ -348,7 +379,7 @@
                     return count === 1 ? '1 specific user' : count + ' specific users';
                 }
                 var labels = {
-                    all: 'Everyone (incl. guests)',
+                    all: 'Customers + guest devices',
                     registered: 'Registered users',
                     guests: 'Guest devices',
                     active: 'Active users',
@@ -443,9 +474,15 @@
                     var summary = item.summary || {};
                     var parts = [audienceLabel(item)];
                     if (item.status === 'sent') {
+                        if (Number(summary.saved_notifications || 0) > 0) {
+                            parts.push('inbox saved ' + Number(summary.saved_notifications || 0));
+                        }
                         parts.push('delivered ' + Number(summary.delivered || 0) + '/' + Number(summary.device_tokens || 0) + ' device(s)');
                         if (Number(summary.failed || 0) > 0) {
                             parts.push(summary.failed + ' failed');
+                        }
+                        if (summary.push_error) {
+                            parts.push(summary.push_error);
                         }
                     }
                     var when = relativeTime(item.created_at);
@@ -591,9 +628,7 @@
                         return;
                     }
 
-                    if (window.adminSwalSuccess) {
-                        window.adminSwalSuccess('Notification resent', payload.message || 'Message sent successfully.');
-                    }
+                    showSendResult('Notification resent', payload);
                     loadHistory();
                 } catch (error) {
                     if (window.adminSwalError) {
@@ -687,9 +722,7 @@
                         }
 
                         resetFormState();
-                        if (window.adminSwalSuccess) {
-                            window.adminSwalSuccess(result.message || 'Notification sent', 'Message sent successfully.');
-                        }
+                        showSendResult('Notification sent', result);
                         loadHistory();
                     } catch (error) {
                         if (window.adminSwalError) {
