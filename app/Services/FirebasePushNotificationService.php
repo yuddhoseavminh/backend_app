@@ -25,21 +25,20 @@ class FirebasePushNotificationService
         $credentials = (string) config('services.firebase.credentials', '');
         $projectId = (string) config('services.firebase.project_id', '');
 
-        if (trim($credentials) === '') {
-            $this->disabledReason = 'Firebase credentials path is not configured.';
-
-            return;
-        }
-
         try {
-            $path = $this->resolveCredentialsPath($credentials);
+            $path = null;
+            if (trim($credentials) !== '') {
+                $path = $this->resolveCredentialsPath($credentials);
+            }
 
-            if (! file_exists($path) || ! is_readable($path)) {
+            if ($path === null || ! file_exists($path) || ! is_readable($path)) {
                 $fallbackPath = $this->resolveFallbackCredentialsPath();
                 if ($fallbackPath !== null) {
                     $path = $fallbackPath;
                 } else {
-                    $this->disabledReason = 'Firebase credentials file not found: '.$path;
+                    $this->disabledReason = $path === null
+                        ? 'Firebase credentials path is not configured.'
+                        : 'Firebase credentials file not found: '.$path;
                     Log::warning('FirebasePushNotificationService: credentials file not found.', ['path' => $path]);
 
                     return;
@@ -265,7 +264,10 @@ class FirebasePushNotificationService
     {
         $candidates = [
             dirname(base_path()).DIRECTORY_SEPARATOR.'secrets'.DIRECTORY_SEPARATOR.'firebase-credentials.json',
+            dirname(base_path()).DIRECTORY_SEPARATOR.'firebase-credentials.json',
+            dirname(base_path()).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'firebase-credentials.json',
             storage_path('app/firebase-credentials.json'),
+            storage_path('app/private/firebase-credentials.json'),
             base_path('firebase-credentials.json'),
         ];
 

@@ -267,14 +267,57 @@
                 return !!summary.push_error || Number(summary.push_disabled || 0) > 0;
             }
 
+            function pushSummary(payload) {
+                var summary = (payload && payload.summary) || {};
+                if (!summary.push_error && payload && payload.history_item && payload.history_item.summary) {
+                    summary = payload.history_item.summary;
+                }
+                return summary || {};
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function cleanPushWarningMessage(message, summary) {
+                var cleaned = String(message || 'Notification saved, but push delivery is not configured.');
+                if (summary && summary.push_error) {
+                    cleaned = cleaned.replace(' Push setup issue: ' + summary.push_error, '');
+                    cleaned = cleaned.replace('Push setup issue: ' + summary.push_error, '');
+                }
+                return cleaned.trim();
+            }
+
             function showSendResult(defaultSuccessTitle, payload) {
-                var message = (payload && payload.message) || 'Notification processed.';
+                var summary = pushSummary(payload);
+                var message = cleanPushWarningMessage((payload && payload.message) || 'Notification processed.', summary);
                 if (hasPushSetupIssue(payload)) {
                     if (window.Swal) {
+                        var delivered = Number(summary.delivered || 0);
+                        var tokens = Number(summary.device_tokens || 0);
+                        var saved = Number(summary.saved_notifications || 0);
+                        var pushError = summary.push_error || 'Firebase push delivery is disabled on this server.';
                         window.Swal.fire({
                             icon: 'warning',
-                            title: 'Notification saved, push not delivered',
-                            text: message,
+                            title: 'Notification saved',
+                            width: 560,
+                            html: ''
+                                + '<div style="text-align:left">'
+                                + '<p style="margin:0 0 14px;color:#475569;font-size:14px;line-height:1.55;text-align:center">' + escapeHtml(message) + '</p>'
+                                + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 14px">'
+                                + '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#f8fafc;text-align:center"><div style="font-size:20px;font-weight:700;color:#0f172a">' + saved + '</div><div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Inbox Saved</div></div>'
+                                + '<div style="border:1px solid #fed7aa;border-radius:12px;padding:10px;background:#fff7ed;text-align:center"><div style="font-size:20px;font-weight:700;color:#c2410c">' + delivered + '/' + tokens + '</div><div style="font-size:11px;font-weight:700;color:#9a3412;text-transform:uppercase;letter-spacing:.06em">Push Delivered</div></div>'
+                                + '</div>'
+                                + '<div style="border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;padding:12px">'
+                                + '<div style="font-size:12px;font-weight:700;color:#9a3412;text-transform:uppercase;letter-spacing:.08em">Push setup issue</div>'
+                                + '<code style="display:block;margin-top:7px;color:#7c2d12;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word">' + escapeHtml(pushError) + '</code>'
+                                + '</div>'
+                                + '<p style="margin:12px 0 0;color:#64748b;font-size:12px;line-height:1.45">Add a Firebase Admin SDK service account JSON at the configured <code>FIREBASE_CREDENTIALS</code> path, then clear the Laravel config cache.</p>'
+                                + '</div>',
                             confirmButtonColor: '#d97706',
                         });
                     } else if (window.adminToast) {
@@ -482,7 +525,7 @@
                             parts.push(summary.failed + ' failed');
                         }
                         if (summary.push_error) {
-                            parts.push(summary.push_error);
+                            parts.push('push setup issue');
                         }
                     }
                     var when = relativeTime(item.created_at);

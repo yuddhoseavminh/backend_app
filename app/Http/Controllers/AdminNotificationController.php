@@ -382,7 +382,7 @@ class AdminNotificationController extends Controller
         $saved = (int) ($summary['saved_notifications'] ?? 0);
 
         if (! empty($summary['push_error'])) {
-            return 'Notification saved to the app inbox for '.$saved.' recipient(s), but push delivery is not configured correctly. Delivered '.$delivered.'/'.$deviceTokens.' device(s). Push setup issue: '.$summary['push_error'];
+            return 'Notification saved to the app inbox for '.$saved.' recipient(s), but push delivery is not configured correctly. Delivered '.$delivered.'/'.$deviceTokens.' device(s).';
         }
 
         if ($deviceTokens === 0) {
