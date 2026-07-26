@@ -234,7 +234,13 @@
             </div>
 
             <div class="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-                <button class="inline-flex h-10 items-center rounded-xl bg-primary-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-primary-700">{{ __('Save Product') }}</button>
+                <button id="product-save-btn" type="submit" class="inline-flex h-10 items-center gap-2 rounded-xl bg-primary-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70">
+                    <svg id="product-save-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                    <span id="product-save-label">{{ __('Save Product') }}</span>
+                </button>
                 <a href="{{ route('admin.products.index') }}" class="text-sm font-semibold text-slate-500 hover:text-slate-700">{{ __('Cancel') }}</a>
             </div>
             <p id="product-form-error" class="text-sm text-danger-600"></p>
@@ -272,6 +278,17 @@
                     <span id="variant-count-badge" class="inline-flex rounded-full border border-primary-300 bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700 dark:border-primary-500/40 dark:bg-primary-500/20 dark:text-primary-200">0 variants</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- Full-screen saving overlay --}}
+    <div id="product-save-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-white/60 backdrop-blur-sm dark:bg-slate-950/60">
+        <div class="flex flex-col items-center gap-3">
+            <svg class="h-10 w-10 animate-spin text-primary-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+            </svg>
+            <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ __('Saving product…') }}</p>
         </div>
     </div>
 
@@ -912,6 +929,19 @@
                 });
             }
 
+            const saveBtn = document.getElementById('product-save-btn');
+            const saveSpinner = document.getElementById('product-save-spinner');
+            const saveLabel = document.getElementById('product-save-label');
+            const saveOverlay = document.getElementById('product-save-overlay');
+
+            function setSaving(isSaving) {
+                saveBtn.disabled = isSaving;
+                saveSpinner.classList.toggle('hidden', !isSaving);
+                saveLabel.textContent = isSaving ? @json(__('Saving…')) : @json(__('Save Product'));
+                saveOverlay.classList.toggle('hidden', !isSaving);
+                saveOverlay.classList.toggle('flex', isSaving);
+            }
+
             document.getElementById('product-create-form').addEventListener('submit', async function (event) {
                 event.preventDefault();
                 const errorBox = document.getElementById('product-form-error');
@@ -926,6 +956,8 @@
                     errorBox.textContent = @json(__('Please add at least one variant.'));
                     return;
                 }
+
+                setSaving(true);
 
                 const formData = new FormData(event.target);
                 formData.set('variants', JSON.stringify(variants.map((item) => ({
@@ -974,11 +1006,13 @@
                     if (window.adminSwalError) {
                         window.adminSwalError('Create failed', errorData.message || 'Unable to create product.');
                     }
+                    setSaving(false);
                 } catch (error) {
                     errorBox.textContent = 'Unable to create product.';
                     if (window.adminSwalError) {
                         window.adminSwalError('Create failed', 'Unable to create product.');
                     }
+                    setSaving(false);
                 }
             });
 

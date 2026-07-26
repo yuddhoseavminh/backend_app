@@ -63,6 +63,8 @@ Route::prefix('auth')->group(function () {
     Route::post('google', [AuthController::class, 'googleLogin']);
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::put('user/update', [AuthController::class, 'update'])->middleware('auth:sanctum');
+    Route::post('user/phone/request-otp', [AuthController::class, 'requestPhoneChangeOtp'])->middleware('auth:sanctum');
+    Route::post('user/phone/confirm', [AuthController::class, 'confirmPhoneChangeOtp'])->middleware('auth:sanctum');
 });
 
 Route::post('otp/request', [OtpController::class, 'request']);
