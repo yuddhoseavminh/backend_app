@@ -509,7 +509,11 @@ class ProductController extends Controller
         $prices = array_map(fn ($row) => (float) ($row['price'] ?? 0), $variantRows);
         $stocks = array_map(fn ($row) => (int) ($row['stock'] ?? 0), $variantRows);
 
-        $validated['price'] = min($prices);
+        // A variant left blank/priced at 0 by mistake must not drag the
+        // whole product's displayed price down to 0 while its siblings are
+        // priced normally — only fall back to 0 if every variant is unpriced.
+        $pricedVariants = array_filter($prices, fn ($price) => $price > 0);
+        $validated['price'] = $pricedVariants !== [] ? min($pricedVariants) : 0;
         $validated['stock'] = array_sum($stocks);
 
         $validated['storage_capacity'] = $this->uniqueVariantValues($variantRows, 'storage_capacity');
