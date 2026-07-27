@@ -15,7 +15,7 @@
                     <h1 class="mt-3 text-2xl font-semibold text-slate-900 dark:text-white">{{ __('Send Notifications With Delivery Context') }}</h1>
                     <p class="mt-2 max-w-3xl text-sm text-slate-500">{{ __('Design and preview the notification payload, choose the audience, and resend past notifications in one click.') }}</p>
                 </div>
-                <div class="flex flex-wrap gap-3">
+                {{-- <div class="flex flex-wrap gap-3">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center dark:border-slate-800 dark:bg-slate-950">
                         <p id="stat-sent" class="text-xl font-bold text-slate-900 dark:text-white">--</p>
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Sent') }}</p>
@@ -28,7 +28,7 @@
                         <p id="stat-failed" class="text-xl font-bold text-rose-600 dark:text-rose-400">--</p>
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Failed') }}</p>
                     </div>
-                </div>
+                </div> --}}
             </div>
         </div>
 

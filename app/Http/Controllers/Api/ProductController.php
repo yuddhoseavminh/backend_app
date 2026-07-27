@@ -703,14 +703,12 @@ class ProductController extends Controller
         $source = $raw !== false ? @imagecreatefromstring($raw) : false;
         if (! $source) {
             if ($bgRemoved !== null) {
-                Storage::disk($disk)->put($targetPath, $bgRemoved);
+                $this->putImageOrFail($disk, $targetPath, $bgRemoved);
 
                 return 'storage/'.$targetPath;
             }
 
-            $storedPath = $file->store($directory, $disk);
-
-            return 'storage/'.$storedPath;
+            return 'storage/'.$this->storeFileOrFail($file, $directory, $disk);
         }
 
         $width = imagesx($source);
@@ -742,12 +740,38 @@ class ProductController extends Controller
         imagedestroy($source);
 
         if (! is_string($encoded) || $encoded === '') {
-            $storedPath = $file->store($directory, $disk);
-            return 'storage/'.$storedPath;
+            return 'storage/'.$this->storeFileOrFail($file, $directory, $disk);
         }
 
-        Storage::disk($disk)->put($targetPath, $encoded);
+        $this->putImageOrFail($disk, $targetPath, $encoded);
 
         return 'storage/'.$targetPath;
+    }
+
+    /**
+     * Storage::put() returns false (rather than throwing) on failure when a
+     * disk is configured with 'throw' => false — as ours is, so a transient
+     * R2/S3 hiccup would otherwise be saved as a DB image path pointing at a
+     * file that was never actually written, breaking every future load of it.
+     */
+    private function putImageOrFail(string $disk, string $path, string $contents): void
+    {
+        if (! Storage::disk($disk)->put($path, $contents)) {
+            throw ValidationException::withMessages([
+                'image' => ['Failed to upload image to storage. Please check your connection and try again.'],
+            ]);
+        }
+    }
+
+    private function storeFileOrFail(UploadedFile $file, string $directory, string $disk): string
+    {
+        $stored = $file->store($directory, $disk);
+        if ($stored === false) {
+            throw ValidationException::withMessages([
+                'image' => ['Failed to upload image to storage. Please check your connection and try again.'],
+            ]);
+        }
+
+        return $stored;
     }
 }
