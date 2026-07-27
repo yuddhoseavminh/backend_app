@@ -180,7 +180,7 @@
                             <template x-for="conv in conversations" :key="conv.id">
                                 <a :href="'/admin/support?conversation=' + conv.id"
                                     class="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                                    :class="conv.admin_unread_count > 0 ? 'bg-primary-50/60 dark:bg-primary-500/5' : ''">
+                                    :class="(conv.unread_for_support || conv.admin_unread_count) > 0 ? 'bg-primary-50/60 dark:bg-primary-500/5' : ''">
                                     {{-- Avatar --}}
                                     <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                                         x-text="(conv.customer && conv.customer.name ? conv.customer.name.charAt(0) : '?')"></span>
@@ -189,12 +189,12 @@
                                         <div class="flex items-center gap-2">
                                             <p class="truncate text-xs font-semibold text-slate-800 dark:text-white"
                                                 x-text="conv.customer ? conv.customer.name : '{{ __('Unknown user') }}'"></p>
-                                            <span x-show="conv.admin_unread_count > 0"
-                                                :x-text="conv.admin_unread_count"
+                                            <span x-show="(conv.unread_for_support || conv.admin_unread_count) > 0"
+                                                x-text="conv.unread_for_support || conv.admin_unread_count"
                                                 class="inline-flex items-center justify-center rounded-full bg-primary-600 px-1.5 text-[10px] font-bold leading-4 text-white"></span>
                                         </div>
                                         <p class="mt-0.5 truncate text-[11px] text-slate-500"
-                                            x-text="conv.last_message || conv.subject || '{{ __('Support conversation') }}'"></p>
+                                            x-text="(conv.latest_message ? conv.latest_message.body : null) || conv.last_message || conv.subject || '{{ __('Support conversation') }}'"></p>
                                         <span class="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
                                             :class="{
                                                 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300': conv.status === 'resolved',
@@ -320,7 +320,7 @@ function adminNotifPanel() {
                     var data2 = await res2.json();
                     var list = data2.data || [];
                     this.unreadFeedbackCount = list.reduce(function(sum, c) {
-                        return sum + (c.admin_unread_count || 0);
+                        return sum + (c.unread_for_support || c.admin_unread_count || 0);
                     }, 0);
                 }
             } catch (e) {}
@@ -367,7 +367,7 @@ function adminNotifPanel() {
                     var data = await res.json();
                     this.conversations = data.data || [];
                     this.unreadFeedbackCount = this.conversations.reduce(function(sum, c) {
-                        return sum + (c.admin_unread_count || 0);
+                        return sum + (c.unread_for_support || c.admin_unread_count || 0);
                     }, 0);
                 }
             } catch (e) {
