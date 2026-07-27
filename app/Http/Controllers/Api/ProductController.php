@@ -9,6 +9,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Part;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\AiDescriptionService;
 use App\Services\RemoveBgService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -135,6 +136,35 @@ class ProductController extends Controller
         return response()->json([
             'sku' => $this->generateSku($validated['name'], $validated['brand'] ?? null),
         ]);
+    }
+
+    public function generateDescription(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'brand' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'tag' => ['nullable', 'string', 'max:255'],
+            'condition' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $service = app(AiDescriptionService::class);
+
+        if (! $service->isEnabled()) {
+            return response()->json([
+                'message' => 'AI description generation is not configured. Set GEMINI_API_KEY in the backend .env.',
+            ], 422);
+        }
+
+        $description = $service->generateProductDescription($validated);
+
+        if ($description === null) {
+            return response()->json([
+                'message' => 'Unable to generate a description right now. Please try again.',
+            ], 502);
+        }
+
+        return response()->json(['description' => $description]);
     }
 
     public function store(StoreProductRequest $request)

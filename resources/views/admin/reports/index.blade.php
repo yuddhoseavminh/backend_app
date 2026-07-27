@@ -65,13 +65,13 @@
             <div class="flex-1 min-w-[160px]">
                 <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">{{ __('Date Range') }}</label>
                 <select id="report-preset" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
-                    <option value="last_7_days">{{ __('Last 7 days') }}</option>
-                    <option value="last_30_days" selected>{{ __('Last 30 days') }}</option>
-                    <option value="last_90_days">{{ __('Last 90 days') }}</option>
-                    <option value="this_month">{{ __('This month') }}</option>
+                    <option value="today">{{ __('Today') }}</option>
+                    <option value="yesterday">{{ __('Yesterday') }}</option>
+                    <option value="this_week">{{ __('This week') }}</option>
+                    <option value="this_month" selected>{{ __('This month') }}</option>
                     <option value="last_month">{{ __('Last month') }}</option>
-                    <option value="year_to_date">{{ __('Year to date') }}</option>
-                    <option value="custom">{{ __('Custom range') }}</option>
+                    <option value="this_year">{{ __('This year') }}</option>
+                    <option value="custom">{{ __('Custom date range') }}</option>
                 </select>
             </div>
 
@@ -123,18 +123,14 @@
                             <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Select Format') }}</p>
                         </div>
                         <button id="export-excel-opt" type="button" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-200 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400 transition-all">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                                📊
-                            </span>
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-xs font-bold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">XLS</span>
                             <div>
                                 <p class="font-semibold">{{ __('Export as Excel') }}</p>
-                                <p class="text-xs text-slate-400">{{ __('Formatted Spreadsheet (.xlsx)') }}</p>
+                                <p class="text-xs text-slate-400">{{ __('Formatted Spreadsheet (.xls)') }}</p>
                             </div>
                         </button>
                         <button id="export-pdf-opt" type="button" class="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-red-50 hover:text-red-700 dark:text-slate-200 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-all">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
-                                📄
-                            </span>
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">PDF</span>
                             <div>
                                 <p class="font-semibold">{{ __('Export as PDF') }}</p>
                                 <p class="text-xs text-slate-400">{{ __('Executive Document (.pdf)') }}</p>
@@ -143,6 +139,54 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <div id="sales-filter-wrap" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-800">
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Branch') }}</label>
+                <input id="filter-branch" type="text" placeholder="{{ __('All branches') }}" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200" />
+            </div>
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Employee') }}</label>
+                <input id="filter-employee" type="text" placeholder="{{ __('Name or ID') }}" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200" />
+            </div>
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Payment Method') }}</label>
+                <select id="filter-payment-method" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
+                    <option value="">{{ __('All') }}</option>
+                    <option value="cod">COD</option>
+                    <option value="khqr">KHQR</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Order Status') }}</label>
+                <select id="filter-order-status" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
+                    <option value="">{{ __('All') }}</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="refunded">Refunded</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Product Category') }}</label>
+                <input id="filter-product-category" type="text" placeholder="{{ __('Name, slug, or ID') }}" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200" />
+            </div>
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Product') }}</label>
+                <input id="filter-product" type="text" placeholder="{{ __('Name or ID') }}" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200" />
+            </div>
+            <div class="sm:col-span-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Customer') }}</label>
+                <input id="filter-customer" type="text" placeholder="{{ __('Name or email') }}" class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200" />
             </div>
         </div>
     </div>
@@ -409,10 +453,11 @@
     </div>
 
     {{-- ── 4. Repair Operations Panel ──────────────────────────────────────── --}}
+    {{-- ── 4. Repair Operations Panel ──────────────────────────────────────── --}}
     <div id="repairs-panel" class="hidden space-y-6">
 
         {{-- KPI Cards --}}
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-all">
                 <div class="flex items-center justify-between">
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Total Requests') }}</p>
@@ -421,24 +466,37 @@
                     </span>
                 </div>
                 <p id="r-total" class="mt-3 text-2xl font-extrabold text-slate-900 dark:text-white">0</p>
+                <p class="text-xs text-slate-400 mt-1">{{ __('Received service devices') }}</p>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-all">
                 <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Completed') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Completed Jobs') }}</p>
                     <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-500/10">
                         <svg class="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
                 </div>
                 <p id="r-completed" class="mt-3 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">0</p>
+                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{{ __('Successfully repaired & delivered') }}</p>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-all">
                 <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('In Progress') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('In Progress / Testing') }}</p>
                     <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/10">
                         <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
                 </div>
                 <p id="r-inprogress" class="mt-3 text-2xl font-extrabold text-amber-600 dark:text-amber-400">0</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">{{ __('Active technician work orders') }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-all">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('Repair Revenue') }}</p>
+                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-500/10">
+                        <svg class="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                </div>
+                <p id="r-revenue" class="mt-3 text-2xl font-extrabold text-purple-600 dark:text-purple-400">$0.00</p>
+                <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">{{ __('Service revenue generated') }}</p>
             </div>
         </div>
 
@@ -459,6 +517,27 @@
                 <div class="h-64 relative flex items-center justify-center">
                     <canvas id="repair-service-chart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        {{-- Technician Performance Leaderboard --}}
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">{{ __('Technician Performance Leaderboard') }}</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-400 dark:bg-slate-800/60">
+                        <tr>
+                            <th class="px-4 py-3 rounded-l-xl">#</th>
+                            <th class="px-4 py-3">{{ __('Technician Name') }}</th>
+                            <th class="px-4 py-3">{{ __('Total Repairs Assigned') }}</th>
+                            <th class="px-4 py-3">{{ __('Completed Jobs') }}</th>
+                            <th class="px-4 py-3 text-right rounded-r-xl">{{ __('Revenue Generated ($)') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="r-tech-body" class="divide-y divide-slate-100 text-slate-600 dark:divide-slate-800 dark:text-slate-300">
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-xs text-slate-400">{{ __('Click Generate Report to load data.') }}</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -517,6 +596,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var thresholdInp= $('report-threshold');
     var typeInput   = $('report-type');
     var btnGen      = $('btn-generate');
+    var filterBranch = $('filter-branch');
+    var filterEmployee = $('filter-employee');
+    var filterPaymentMethod = $('filter-payment-method');
+    var filterOrderStatus = $('filter-order-status');
+    var filterProductCategory = $('filter-product-category');
+    var filterProduct = $('filter-product');
+    var filterCustomer = $('filter-customer');
 
     // Export dropdown element references
     var exportContainer = $('export-dropdown-container');
@@ -532,6 +618,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var inventoryCatChart = null;
     var repairStatusChart = null;
     var repairServiceChart = null;
+
+    // Shared helper: safely destroy an existing Chart.js instance before re-creating
+    function safelyDestroyChart(canvasId) {
+        if (typeof Chart !== 'undefined' && Chart.getChart) {
+            var existing = Chart.getChart(canvasId);
+            if (existing) { existing.destroy(); }
+        }
+    }
 
     // ── Export Dropdown Toggle ─────────────────────────────────────────────
     exportToggle.addEventListener('click', function (e) {
@@ -578,6 +672,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Show threshold input only for inventory
         $('threshold-wrap').classList.toggle('hidden', name !== 'inventory');
+        $('sales-filter-wrap').classList.toggle('hidden', name !== 'sales');
+
+        // Trigger Chart.js resize after panel visibility changes
+        setTimeout(function () {
+            if (typeof Chart !== 'undefined' && Chart.instances) {
+                Object.keys(Chart.instances).forEach(function (key) {
+                    try { Chart.instances[key].resize(); } catch (e) {}
+                });
+            }
+        }, 60);
     }
 
     // ── Custom Range Toggle ────────────────────────────────────────────────
@@ -599,11 +703,31 @@ document.addEventListener('DOMContentLoaded', function () {
         if (thresholdInp.value) {
             p.set('threshold', thresholdInp.value);
         }
+        appendSalesFilters(p);
         return p;
     }
 
+    function appendSalesFilters(params) {
+        var filters = reportFilterPayload();
+        Object.keys(filters).forEach(function (key) {
+            if (filters[key]) params.set(key, filters[key]);
+        });
+    }
+
+    function reportFilterPayload() {
+        return {
+            branch: filterBranch.value.trim(),
+            employee: filterEmployee.value.trim(),
+            payment_method: filterPaymentMethod.value,
+            order_status: filterOrderStatus.value,
+            product_category: filterProductCategory.value.trim(),
+            product: filterProduct.value.trim(),
+            customer: filterCustomer.value.trim()
+        };
+    }
+
     // ── Fetch & Generate Analytics ──────────────────────────────────────────
-    btnGen.addEventListener('click', generate);
+    btnGen.addEventListener('click', generateAll);
 
     async function generate() {
         var type = typeInput.value;
@@ -625,9 +749,54 @@ document.addEventListener('DOMContentLoaded', function () {
             if (type === 'inventory')  renderInventory(data);
             if (type === 'repairs')    renderRepairs(data);
 
+            setTimeout(function () {
+                if (typeof Chart !== 'undefined' && Chart.instances) {
+                    Object.keys(Chart.instances).forEach(function (key) {
+                        try {
+                            Chart.instances[key].resize();
+                            Chart.instances[key].update();
+                        } catch (e) {}
+                    });
+                }
+            }, 80);
+
         } catch (e) {
             setLoading(false);
         }
+    }
+
+    async function generateAll() {
+        setLoading(true);
+        var types = ['sales', 'customers', 'inventory', 'repairs'];
+        for (var i = 0; i < types.length; i++) {
+            var t = types[i];
+            try {
+                var res = await window.adminApi.request('/api/admin/reports/' + t + '?' + buildParams());
+                if (res.ok) {
+                    var data = await res.json();
+                    if (data.range) {
+                        $('range-label-text').textContent = data.range.label + ' (' + data.range.start + ' → ' + data.range.end + ')';
+                        $('live-range-badge').classList.remove('hidden');
+                    }
+                    if (t === 'sales')      renderSales(data);
+                    if (t === 'customers')  renderCustomers(data);
+                    if (t === 'inventory')  renderInventory(data);
+                    if (t === 'repairs')    renderRepairs(data);
+                }
+            } catch (e) {}
+        }
+        setLoading(false);
+
+        setTimeout(function () {
+            if (typeof Chart !== 'undefined' && Chart.instances) {
+                Object.keys(Chart.instances).forEach(function (key) {
+                    try {
+                        Chart.instances[key].resize();
+                        Chart.instances[key].update();
+                    } catch (e) {}
+                });
+            }
+        }, 100);
     }
 
     function setLoading(on) {
@@ -657,14 +826,6 @@ document.addEventListener('DOMContentLoaded', function () {
         var gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
         var textColor = isDark ? '#94a3b8' : '#64748b';
 
-        function safelyDestroyChart(canvasId) {
-            if (typeof Chart !== 'undefined' && Chart.getChart) {
-                var existing = Chart.getChart(canvasId);
-                if (existing) {
-                    existing.destroy();
-                }
-            }
-        }
 
         // 1. Line Area Chart
         var daily  = data.daily || [];
@@ -864,9 +1025,11 @@ document.addEventListener('DOMContentLoaded', function () {
         $('r-total').textContent      = m.total_requests ?? 0;
         $('r-completed').textContent  = m.completed ?? 0;
         $('r-inprogress').textContent = m.in_progress ?? 0;
+        if ($('r-revenue')) $('r-revenue').textContent = fmt.format(m.repair_revenue || 0);
 
         var byStatus  = data.by_status || [];
         var byService = data.by_service_type || [];
+        var technicians = data.technicians || [];
 
         // Status Doughnut Chart
         safelyDestroyChart('repair-status-chart');
@@ -874,10 +1037,10 @@ document.addEventListener('DOMContentLoaded', function () {
         repairStatusChart = new Chart(rCtx, {
             type: 'doughnut',
             data: {
-                labels: byStatus.map(function(s){ return (s.status || '').replace(/_/g,' '); }),
+                labels: byStatus.length ? byStatus.map(function(s){ return (s.status || '').replace(/_/g,' ').toUpperCase(); }) : ['Pending', 'Completed', 'In Progress'],
                 datasets: [{
-                    data: byStatus.map(function(s){ return s.count; }),
-                    backgroundColor: ['#3b82f6','#8b5cf6','#f59e0b','#f97316','#8b5cf6','#10b981','#059669'],
+                    data: byStatus.length ? byStatus.map(function(s){ return s.count; }) : [1, 1, 1],
+                    backgroundColor: ['#3b82f6','#10b981','#f59e0b','#f97316','#8b5cf6','#059669'],
                     borderWidth: 0
                 }]
             },
@@ -890,16 +1053,33 @@ document.addEventListener('DOMContentLoaded', function () {
         repairServiceChart = new Chart(sCtx, {
             type: 'bar',
             data: {
-                labels: byService.map(function(s){ return (s.service_type || '').replace(/_/g,' '); }),
+                labels: byService.length ? byService.map(function(s){ return (s.service_type || '').replace(/_/g,' ').toUpperCase(); }) : ['Drop Off', 'Pick Up', 'On Site'],
                 datasets: [{
                     label: 'Service Count',
-                    data: byService.map(function(s){ return s.count; }),
+                    data: byService.length ? byService.map(function(s){ return s.count; }) : [1, 1, 1],
                     backgroundColor: '#6366f1',
                     borderRadius: 8
                 }]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
+
+        // Technician performance table
+        if ($('r-tech-body')) {
+            if (!technicians.length) {
+                $('r-tech-body').innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-xs text-slate-400">No technician assignments recorded.</td></tr>';
+            } else {
+                $('r-tech-body').innerHTML = technicians.map(function (t, i) {
+                    return '<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">'
+                        + '<td class="px-4 py-3.5 font-bold text-xs text-slate-400">' + (i + 1) + '</td>'
+                        + '<td class="px-4 py-3.5 font-bold text-slate-900 dark:text-white">' + esc(t.technician_name || 'Technician') + '</td>'
+                        + '<td class="px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">' + (t.repairs_count || 0) + '</td>'
+                        + '<td class="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">' + (t.completed_count || 0) + '</td>'
+                        + '<td class="px-4 py-3.5 text-right font-extrabold text-purple-600 dark:text-purple-400">' + fmt.format(t.revenue || 0) + '</td>'
+                        + '</tr>';
+                }).join('');
+            }
+        }
 
         // Recent table
         var recent = data.recent || [];
@@ -927,6 +1107,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var type = typeInput.value;
         var payload = { type: type, format: selectedFormat, preset: preset.value, threshold: thresholdInp.value || 10 };
         if (preset.value === 'custom') { payload.start = startInp.value; payload.end = endInp.value; }
+        Object.assign(payload, reportFilterPayload());
 
         await window.adminApi.ensureCsrfCookie();
         setLoading(true);
@@ -965,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             $('exports-list').innerHTML = list.map(function (item) {
                 var isPdf = item.format === 'pdf';
-                var icon  = isPdf ? '📄' : '📊';
+                var icon  = isPdf ? 'PDF' : 'XLS';
                 var badge = isPdf ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
                 var label = cap(item.type) + ' Analytics Report · ' + item.format.toUpperCase();
                 var range = item.range ? item.range.start + ' → ' + item.range.end : '';
@@ -989,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 
     // Initial load
-    generate();
+    generateAll();
     loadExports();
 });
 </script>
