@@ -113,4 +113,89 @@ class AiDescriptionService
 
         return $english . "\n\n── ភាសាខ្មែរ (Khmer) ──\n\n" . $khmer;
     }
+
+    /**
+     * Ask Gemini for a short push-notification message body from a title.
+     * Returns null when disabled, unconfigured, or on failure — callers
+     * should surface a clear error rather than silently falling back.
+     */
+    public function generateNotificationMessage(string $title, ?string $type = null): ?string
+    {
+        if (! $this->isEnabled()) {
+            return null;
+        }
+
+        $title = trim($title);
+        if ($title === '') {
+            return null;
+        }
+
+        $prompt = "Write a short push notification message body for a service center / e-commerce mobile app."
+            . " The notification title is: \"{$title}\"."
+            . ($type ? " Notification type: {$type}." : '')
+            . ' Keep it to 1-3 short, friendly, actionable sentences. Plain text only, no markdown symbols like ** or #, no headings.'
+            . " Respond in exactly this structure and nothing else, with no extra commentary:\n\n"
+            . "[KM]\n"
+            . "<Natural Khmer message here>\n\n"
+            . "[EN]\n"
+            . "<English message here, same meaning>\n\n"
+            . 'Replace the bracketed instructions with the real content — keep the [KM] and [EN] markers on their own line exactly as shown.';
+
+        $model = config('services.gemini.model', 'gemini-flash-latest');
+        $url = rtrim(config('services.gemini.base_url'), '/') . "/v1beta/models/{$model}:generateContent";
+
+        try {
+            $response = Http::withHeaders([
+                'x-goog-api-key' => config('services.gemini.api_key'),
+                'content-type' => 'application/json',
+            ])
+                ->timeout((int) config('services.gemini.timeout', 20))
+                ->post($url, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]],
+                    ],
+                    'generationConfig' => [
+                        // See generateProductDescription() for why this needs headroom
+                        // beyond the visible bilingual text.
+                        'maxOutputTokens' => 1024,
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $text = trim((string) $response->json('candidates.0.content.parts.0.text'));
+
+                return $text !== '' ? $this->splitBilingualKhmerFirst($text) : null;
+            }
+
+            Log::warning('Gemini notification message request failed.', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Gemini notification message request error.', ['error' => $e->getMessage()]);
+        }
+
+        return null;
+    }
+
+    /**
+     * The model replies with [KM]/[EN] markers; split on those and join with
+     * Khmer first, English below. Falls back to the raw text if the model
+     * didn't follow the marker format.
+     */
+    private function splitBilingualKhmerFirst(string $text): string
+    {
+        if (! preg_match('/\[KM\]\s*(.*?)\s*\[EN\]\s*(.*)/is', $text, $matches)) {
+            return $text;
+        }
+
+        $khmer = trim($matches[1]);
+        $english = trim($matches[2]);
+
+        if ($khmer === '' || $english === '') {
+            return $text;
+        }
+
+        return $khmer . "\n\n── English ──\n\n" . $english;
+    }
 }

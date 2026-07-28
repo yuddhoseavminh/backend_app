@@ -580,6 +580,13 @@
         <div id="exports-list" class="mt-4 space-y-3">
             <p class="text-xs text-slate-400">{{ __('No recent exports.') }}</p>
         </div>
+        <div id="exports-pagination" class="mt-4 hidden items-center justify-between gap-3">
+            <p id="exports-page-info" class="text-xs text-slate-400"></p>
+            <div class="flex items-center gap-2">
+                <button id="exports-prev" type="button" class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 transition-all">{{ __('Prev') }}</button>
+                <button id="exports-next" type="button" class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 transition-all">{{ __('Next') }}</button>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -1132,36 +1139,69 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Exports History ────────────────────────────────────────────────────
+    var EXPORTS_PER_PAGE = 10;
+    var allExports = [];
+    var exportsPage = 1;
+
     $('exports-refresh').addEventListener('click', loadExports);
+    $('exports-prev').addEventListener('click', function () {
+        if (exportsPage > 1) { exportsPage--; renderExportsPage(); }
+    });
+    $('exports-next').addEventListener('click', function () {
+        var lastPage = Math.max(1, Math.ceil(allExports.length / EXPORTS_PER_PAGE));
+        if (exportsPage < lastPage) { exportsPage++; renderExportsPage(); }
+    });
 
     async function loadExports() {
         try {
             var res = await window.adminApi.request('/api/admin/reports/exports');
             if (!res.ok) return;
             var data = await res.json();
-            var list = data.exports || [];
-            if (!list.length) {
-                $('exports-list').innerHTML = '<p class="text-xs text-slate-400">No recent exports.</p>';
-                return;
-            }
-            $('exports-list').innerHTML = list.map(function (item) {
-                var isPdf = item.format === 'pdf';
-                var icon  = isPdf ? 'PDF' : 'XLS';
-                var badge = isPdf ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
-                var label = cap(item.type) + ' Analytics Report · ' + item.format.toUpperCase();
-                var range = item.range ? item.range.start + ' → ' + item.range.end : '';
-                var date  = item.generated_at ? new Date(item.generated_at).toLocaleString() : '';
-                var kb    = item.size ? (item.size / 1024).toFixed(1) + ' KB' : '';
-
-                return '<div class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">'
-                    + '<div class="flex items-center gap-3"><span class="text-lg">' + icon + '</span>'
-                    + '<div><div class="flex items-center gap-2"><p class="text-sm font-bold text-slate-900 dark:text-white">' + esc(label) + '</p><span class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ' + badge + '">' + esc(item.format) + '</span></div>'
-                    + '<p class="text-xs text-slate-400 mt-0.5">' + [date, range, kb].filter(Boolean).join(' · ') + '</p></div></div>'
-                    + '<a href="' + esc(item.download_url) + '" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary-700 transition-all">'
-                    + '<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
-                    + 'Download</a></div>';
-            }).join('');
+            allExports = data.exports || [];
+            exportsPage = 1;
+            renderExportsPage();
         } catch (e) {}
+    }
+
+    function renderExportsPage() {
+        if (!allExports.length) {
+            $('exports-list').innerHTML = '<p class="text-xs text-slate-400">No recent exports.</p>';
+            $('exports-pagination').classList.add('hidden');
+            return;
+        }
+
+        var lastPage = Math.max(1, Math.ceil(allExports.length / EXPORTS_PER_PAGE));
+        exportsPage = Math.min(Math.max(exportsPage, 1), lastPage);
+        var start = (exportsPage - 1) * EXPORTS_PER_PAGE;
+        var pageItems = allExports.slice(start, start + EXPORTS_PER_PAGE);
+
+        $('exports-list').innerHTML = pageItems.map(function (item) {
+            var isPdf = item.format === 'pdf';
+            var icon  = isPdf ? 'PDF' : 'XLS';
+            var badge = isPdf ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+            var label = cap(item.type) + ' Analytics Report · ' + item.format.toUpperCase();
+            var range = item.range ? item.range.start + ' → ' + item.range.end : '';
+            var date  = item.generated_at ? new Date(item.generated_at).toLocaleString() : '';
+            var kb    = item.size ? (item.size / 1024).toFixed(1) + ' KB' : '';
+
+            return '<div class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">'
+                + '<div class="flex items-center gap-3"><span class="text-lg">' + icon + '</span>'
+                + '<div><div class="flex items-center gap-2"><p class="text-sm font-bold text-slate-900 dark:text-white">' + esc(label) + '</p><span class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ' + badge + '">' + esc(item.format) + '</span></div>'
+                + '<p class="text-xs text-slate-400 mt-0.5">' + [date, range, kb].filter(Boolean).join(' · ') + '</p></div></div>'
+                + '<a href="' + esc(item.download_url) + '" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary-700 transition-all">'
+                + '<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
+                + 'Download</a></div>';
+        }).join('');
+
+        if (allExports.length > EXPORTS_PER_PAGE) {
+            $('exports-pagination').classList.remove('hidden');
+            $('exports-pagination').classList.add('flex');
+            $('exports-page-info').textContent = 'Page ' + exportsPage + ' of ' + lastPage + ' (' + allExports.length + ' total)';
+            $('exports-prev').disabled = exportsPage <= 1;
+            $('exports-next').disabled = exportsPage >= lastPage;
+        } else {
+            $('exports-pagination').classList.add('hidden');
+        }
     }
 
     function esc(s) {

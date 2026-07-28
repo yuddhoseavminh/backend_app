@@ -69,7 +69,7 @@
                             <svg class="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                             </svg>
-                            <span class="text-sm font-semibold text-slate-800 dark:text-white">{{ __('Feedback') }}</span>
+                            <span class="text-sm font-semibold text-slate-800 dark:text-white">{{ __('Support Chat') }}</span>
                             <span x-show="unreadCount > 0"
                                 x-text="unreadCount > 99 ? '99+' : unreadCount"
                                 class="inline-flex items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"></span>
@@ -96,7 +96,7 @@
                                     <svg class="h-8 w-8 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                                     </svg>
-                                    <p class="mt-2 text-xs font-medium text-slate-400">{{ __('No feedback yet') }}</p>
+                                    <p class="mt-2 text-xs font-medium text-slate-400">{{ __('No support chats yet') }}</p>
                                 </div>
                             </template>
                             <template x-for="conv in conversations" :key="conv.id">
@@ -139,7 +139,7 @@
                             {{-- View all --}}
                             <a href="/admin/support"
                                 class="flex items-center justify-center gap-1 border-t border-slate-100 py-3 text-xs font-semibold text-amber-600 hover:text-amber-700 dark:border-slate-800 dark:text-amber-400">
-                                {{ __('View all feedback') }}
+                                {{ __('View all support chats') }}
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                                 </svg>
@@ -302,7 +302,7 @@ window._adminFeedbackToast = (function () {
 
             var text = document.createElement('div');
             text.style.cssText = 'min-width:0;flex:1';
-            text.innerHTML = '<p style="font-size:12px;font-weight:700;color:#e2e8f0;margin:0 0 2px;">' + (title || '{{ __('New Feedback') }}') + '</p>'
+            text.innerHTML = '<p style="font-size:12px;font-weight:700;color:#e2e8f0;margin:0 0 2px;">' + (title || '{{ __('New Support Message') }}') + '</p>'
                            + '<p style="font-size:11px;color:#94a3b8;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (body || '') + '</p>';
 
             el.appendChild(icon);
@@ -422,7 +422,7 @@ function adminNotifPanel() {
                         var customerName = (newest && newest.customer) ? newest.customer.name : '{{ __('A customer') }}';
                         var lastMsg = (newest && newest.latest_message) ? (newest.latest_message.body || '') : '';
                         var toastTitle = customerName + ' {{ __('sent a message') }}';
-                        var toastBody  = lastMsg ? lastMsg.substring(0, 80) : '{{ __('New customer feedback received') }}';
+                        var toastBody  = lastMsg ? lastMsg.substring(0, 80) : '{{ __('New customer message received') }}';
                         var convHref   = newest ? ('/admin/support?conversation=' + newest.id) : '/admin/support';
 
                         // Toast popup
