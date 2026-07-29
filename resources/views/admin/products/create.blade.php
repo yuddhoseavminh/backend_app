@@ -53,10 +53,10 @@
                 </button>
                 <div x-show="open" class="space-y-4 border-t border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
+                        <div class="relative">
                             <label class="text-sm font-semibold text-slate-700 dark:text-slate-200" for="name">{{ __('Product Name') }} *</label>
-                            <input id="name" name="name" type="text" list="name-presets" autocomplete="off" placeholder="{{ __('Type or select a model') }}" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200" />
-                            <datalist id="name-presets"></datalist>
+                            <input id="name" name="name" type="text" autocomplete="off" placeholder="{{ __('Type or select a model') }}" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200" />
+                            <div id="name-suggestions" class="absolute inset-x-0 top-full z-20 mt-1 hidden max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
                         </div>
                         <div>
                             <label class="text-sm font-semibold text-slate-700 dark:text-slate-200" for="brand-select">{{ __('Brand') }}</label>
@@ -372,7 +372,7 @@
                 },
             };
 
-            const namePresets = document.getElementById('name-presets');
+            const nameSuggestions = document.getElementById('name-suggestions');
             const nameInput = document.getElementById('name');
             const brandSelect = document.getElementById('brand-select');
             const brandInput = document.getElementById('brand');
@@ -551,15 +551,64 @@
             }
 
             // ── Product name control ─────────────────────────────────────
-            // A single text input backed by a <datalist>: the user can type any
-            // custom name freely, or pick a suggestion from the dropdown list.
-            function applyNameControl() {
-                const type = currentType();
-                const presets = NAME_PRESETS[type] || [];
-                namePresets.innerHTML = presets.map((model) => '<option value="' + escapeHtml(model) + '"></option>').join('');
+            // A single text input with a styled JS dropdown: the user can type any
+            // custom name freely, or click a suggestion filtered from the presets.
+            let activeNamePresets = [];
+
+            function hideNameSuggestions() {
+                nameSuggestions.classList.add('hidden');
             }
 
-            nameInput.addEventListener('input', scheduleSkuPreviewRefresh);
+            function renderNameSuggestions() {
+                const query = cleanText(nameInput.value).toLowerCase();
+                const matches = activeNamePresets.filter((model) => !query || model.toLowerCase().includes(query));
+
+                if (!matches.length) {
+                    nameSuggestions.innerHTML = '';
+                    hideNameSuggestions();
+                    return;
+                }
+
+                nameSuggestions.innerHTML = matches.map((model) =>
+                    '<button type="button" data-name-option class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-primary-50 dark:text-slate-200 dark:hover:bg-slate-800">' + escapeHtml(model) + '</button>'
+                ).join('');
+                nameSuggestions.classList.remove('hidden');
+            }
+
+            function applyNameControl() {
+                const type = currentType();
+                activeNamePresets = NAME_PRESETS[type] || [];
+                hideNameSuggestions();
+            }
+
+            nameInput.addEventListener('input', function () {
+                renderNameSuggestions();
+                scheduleSkuPreviewRefresh();
+            });
+
+            nameInput.addEventListener('focus', renderNameSuggestions);
+
+            nameInput.addEventListener('blur', function () {
+                // Delay so a click on a suggestion (mousedown below) registers first.
+                setTimeout(hideNameSuggestions, 100);
+            });
+
+            nameInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    hideNameSuggestions();
+                }
+            });
+
+            nameSuggestions.addEventListener('mousedown', function (event) {
+                const button = event.target.closest('[data-name-option]');
+                if (!button) {
+                    return;
+                }
+                event.preventDefault();
+                nameInput.value = button.textContent;
+                hideNameSuggestions();
+                scheduleSkuPreviewRefresh();
+            });
 
             // ── Brand control ────────────────────────────────────────────
             function applyBrandControl() {
