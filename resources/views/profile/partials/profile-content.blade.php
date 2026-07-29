@@ -2,7 +2,10 @@
     $user = auth()->user();
     $displayName = trim((string) ($user?->name ?? 'User'));
     $email = (string) ($user?->email ?? 'No email on file');
-    $roleName = $user?->isAdmin() ? 'Super Administrator' : ($user?->role ?? 'User');
+    $assignedRole = $user?->roles->first();
+    $roleName = $user?->isAdmin()
+        ? 'Super Administrator'
+        : ($assignedRole?->name ?? $user?->role ?? 'User');
     $parts = preg_split('/\s+/', $displayName) ?: [];
     $initials = '';
 

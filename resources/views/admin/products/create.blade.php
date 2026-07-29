@@ -54,11 +54,9 @@
                 <div x-show="open" class="space-y-4 border-t border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="text-sm font-semibold text-slate-700 dark:text-slate-200" for="name-select">{{ __('Product Name') }} *</label>
-                            <select id="name-select" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200">
-                                <option value="">{{ __('Select model') }}</option>
-                            </select>
-                            <input id="name" name="name" type="text" placeholder="{{ __('Product name') }}" class="mt-2 hidden w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200" />
+                            <label class="text-sm font-semibold text-slate-700 dark:text-slate-200" for="name">{{ __('Product Name') }} *</label>
+                            <input id="name" name="name" type="text" list="name-presets" autocomplete="off" placeholder="{{ __('Type or select a model') }}" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200" />
+                            <datalist id="name-presets"></datalist>
                         </div>
                         <div>
                             <label class="text-sm font-semibold text-slate-700 dark:text-slate-200" for="brand-select">{{ __('Brand') }}</label>
@@ -307,7 +305,7 @@
             const variants = [];
             let editIndex = null;
 
-            // Preset model names per product type. "Custom…" reveals a free-text input.
+            // Suggested model names per product type, shown as datalist options for the name input.
             const NAME_PRESETS = {
                 mobile: [
                     'iPhone 12', 'iPhone 12 mini', 'iPhone 12 Pro', 'iPhone 12 Pro Max',
@@ -374,7 +372,7 @@
                 },
             };
 
-            const nameSelect = document.getElementById('name-select');
+            const namePresets = document.getElementById('name-presets');
             const nameInput = document.getElementById('name');
             const brandSelect = document.getElementById('brand-select');
             const brandInput = document.getElementById('brand');
@@ -399,7 +397,6 @@
             const categorySelect = document.getElementById('category');
             const tagSelect = document.getElementById('tag');
 
-            const CUSTOM_NAME = '__custom__';
             let masterOptions = {};
             let skuPreviewTimer = null;
             let skuPreviewRequestId = 0;
@@ -554,46 +551,13 @@
             }
 
             // ── Product name control ─────────────────────────────────────
+            // A single text input backed by a <datalist>: the user can type any
+            // custom name freely, or pick a suggestion from the dropdown list.
             function applyNameControl() {
                 const type = currentType();
                 const presets = NAME_PRESETS[type] || [];
-
-                if (!presets.length) {
-                    nameSelect.classList.add('hidden');
-                    nameInput.classList.remove('hidden');
-                    return;
-                }
-
-                const keepValue = cleanText(nameInput.value);
-                nameSelect.innerHTML = '<option value="">' + @json(__('Select model')) + '</option>'
-                    + presets.map((model) => '<option value="' + escapeHtml(model) + '">' + escapeHtml(model) + '</option>').join('')
-                    + '<option value="' + CUSTOM_NAME + '">' + @json(__('Custom name…')) + '</option>';
-                nameSelect.classList.remove('hidden');
-
-                if (keepValue && presets.indexOf(keepValue) !== -1) {
-                    nameSelect.value = keepValue;
-                    nameInput.classList.add('hidden');
-                } else if (keepValue) {
-                    nameSelect.value = CUSTOM_NAME;
-                    nameInput.classList.remove('hidden');
-                } else {
-                    nameSelect.value = '';
-                    nameInput.classList.add('hidden');
-                }
+                namePresets.innerHTML = presets.map((model) => '<option value="' + escapeHtml(model) + '"></option>').join('');
             }
-
-            nameSelect.addEventListener('change', function () {
-                if (nameSelect.value === CUSTOM_NAME) {
-                    nameInput.value = '';
-                    nameInput.classList.remove('hidden');
-                    nameInput.focus();
-                    scheduleSkuPreviewRefresh();
-                    return;
-                }
-                nameInput.value = nameSelect.value;
-                nameInput.classList.add('hidden');
-                scheduleSkuPreviewRefresh();
-            });
 
             nameInput.addEventListener('input', scheduleSkuPreviewRefresh);
 
