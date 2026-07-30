@@ -41,38 +41,38 @@
             </div>
         </div>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <a id="metric-sales-card" href="{{ route('admin.orders.index') }}" class="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-primary-500/40 dark:focus:ring-offset-slate-950">
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Total Sales') }}</p>
                     <div class="mt-4 flex items-end justify-between">
                         <p id="metric-sales" class="text-2xl font-semibold text-slate-900 dark:text-white">--</p>
                         <span class="rounded-full bg-success-50 px-2 py-1 text-xs font-medium text-success-700 dark:bg-success-500/10 dark:text-success-100">{{ __('Live') }}</span>
                     </div>
                     <p id="metric-sales-caption" class="mt-2 text-xs text-slate-500">{{ __('All time') }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                </a>
+                <a id="metric-orders-card" href="{{ route('admin.orders.index') }}" class="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-primary-500/40 dark:focus:ring-offset-slate-950">
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Total Orders') }}</p>
                     <div class="mt-4 flex items-end justify-between">
                         <p id="metric-orders" class="text-2xl font-semibold text-slate-900 dark:text-white">--</p>
                         <span class="rounded-full bg-primary-50 px-2 py-1 text-xs font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-100">{{ __('Live') }}</span>
                     </div>
                     <p id="metric-orders-caption" class="mt-2 text-xs text-slate-500">{{ __('All time') }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                </a>
+                <a href="{{ route('admin.products.index') }}" class="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-primary-500/40 dark:focus:ring-offset-slate-950">
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Total Products') }}</p>
                     <div class="mt-4 flex items-end justify-between">
                         <p id="metric-products" class="text-2xl font-semibold text-slate-900 dark:text-white">--</p>
                         <span class="rounded-full bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-100">{{ __('Live') }}</span>
                     </div>
                     <p class="mt-2 text-xs text-slate-500">{{ __('All time') }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                </a>
+                <a href="{{ route('admin.customers.index') }}" class="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-primary-500/40 dark:focus:ring-offset-slate-950">
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Total Customers') }}</p>
                     <div class="mt-4 flex items-end justify-between">
                         <p id="metric-customers" class="text-2xl font-semibold text-slate-900 dark:text-white">--</p>
                         <span class="rounded-full bg-success-50 px-2 py-1 text-xs font-medium text-success-700 dark:bg-success-500/10 dark:text-success-100">{{ __('Live') }}</span>
                     </div>
                     <p class="mt-2 text-xs text-slate-500">{{ __('All time') }}</p>
-                </div>
+                </a>
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -171,7 +171,7 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ __('Low Stock Alerts') }}</h2>
-                    <a href="{{ route('admin.products.index') }}" class="text-xs font-semibold text-primary-600">{{ __('View all') }}</a>
+                    <a href="{{ route('admin.products.index', ['low_stock' => 1, 'threshold' => 10]) }}" class="text-xs font-semibold text-primary-600">{{ __('View all') }}</a>
                 </div>
                 <div id="low-stock-list" class="mt-5 space-y-4 text-sm text-slate-500">
                     {{ __('Loading low stock items...') }}
@@ -298,6 +298,10 @@
             const salesCaption = document.getElementById('metric-sales-caption');
             const ordersCaption = document.getElementById('metric-orders-caption');
             const overviewSubtitle = document.getElementById('sales-overview-subtitle');
+            const salesCard = document.getElementById('metric-sales-card');
+            const ordersCard = document.getElementById('metric-orders-card');
+            const ordersIndexUrl = @json(route('admin.orders.index'));
+            let latestMetricsRange = null;
 
             function toggleCustomRangeInputs() {
                 const isCustom = rangeSelect.value === 'custom';
@@ -312,6 +316,21 @@
                 }
                 const selectedOption = rangeSelect.options[rangeSelect.selectedIndex];
                 return selectedOption ? selectedOption.textContent : '';
+            }
+
+            function updateMetricCardLinks() {
+                const params = new URLSearchParams();
+                if (latestMetricsRange && latestMetricsRange.start) {
+                    params.set('from_date', latestMetricsRange.start);
+                    if (latestMetricsRange.end) {
+                        params.set('to_date', latestMetricsRange.end);
+                    }
+                }
+
+                const query = params.toString();
+                const ordersUrl = ordersIndexUrl + (query ? '?' + query : '');
+                if (salesCard) salesCard.href = ordersUrl;
+                if (ordersCard) ordersCard.href = ordersUrl;
             }
 
             async function loadMetrics() {
@@ -331,6 +350,7 @@
                         return;
                     }
                     const data = await response.json();
+                    latestMetricsRange = data.range || null;
                     document.getElementById('metric-sales').textContent = formatCurrency(data.total_sales || 0);
                     document.getElementById('metric-orders').textContent = data.total_orders ?? '--';
                     document.getElementById('metric-products').textContent = data.total_products ?? '--';
@@ -343,6 +363,7 @@
                         overviewSubtitle.textContent = i18n.overviewSubtitlePrefix + ' ' + caption;
                     }
 
+                    updateMetricCardLinks();
                     renderSalesOverview(data.sales_series || []);
                 } catch (error) {
                     console.error(error);
@@ -426,7 +447,7 @@
                         }).join('');
 
                         return `
-                            <tr>
+                            <tr class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60" onclick="window.location.href='/admin/orders/${order.id}'">
                                 <td class="px-4 py-3 font-semibold text-slate-900 dark:text-white">${order.order_number}</td>
                                 <td class="px-4 py-3">${order.customer_name}</td>
                                 <td class="px-4 py-3">${order.placed_at ? new Date(order.placed_at).toLocaleDateString() : '-'}</td>
@@ -434,7 +455,7 @@
                                 <td class="px-4 py-3">
                                     <span class="payment-badge rounded-full px-2 py-1 text-xs font-semibold ${paymentClass}" data-order-id="${order.id}">${i18n.paymentStatusLabels[normalizedPaymentStatus] || normalizedPaymentStatus}</span>
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3 text-right" onclick="event.stopPropagation()">
                                     <div class="flex items-center justify-end gap-2">
                                         <select class="payment-status-select h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200" data-order-id="${order.id}" data-current="${normalizedPaymentStatus}">
                                             ${paymentSelectOptions}

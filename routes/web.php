@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminNotificationController;
+use App\Http\Controllers\AdminApiSyncController;
 use App\Http\Controllers\ProfileController;
 use App\Models\KhqrTransaction;
 use App\Models\Payment;
@@ -70,6 +71,9 @@ Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function ()
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get(['id', 'name']),
+            'productTypes' => \App\Models\ProductType::query()
+                ->ordered()
+                ->get(),
         ]);
     })->name('products.create')->middleware('permission:create_product');
     Route::get('/products/{product}/edit', function (\App\Models\Product $product) {
@@ -80,6 +84,9 @@ Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function ()
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get(['id', 'name']),
+            'productTypes' => \App\Models\ProductType::query()
+                ->ordered()
+                ->get(),
         ]);
     })->name('products.edit')->middleware('permission:update_product');
     Route::view('/product-attributes', 'admin.product-attributes.index')->name('product-attributes.index')->middleware('permission:view_product_master');
@@ -260,6 +267,18 @@ Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function ()
     })->name('payments.index')->middleware('permission:view_payment');
     Route::view('/reports', 'admin.reports.index')->name('reports.index')->middleware('permission:view_sales_report');
     Route::view('/settings', 'admin.settings.index')->name('settings.index')->middleware('permission:view_setting');
+
+    // ── Get API / Sync routes ─────────────────────────────────────────────────
+    Route::get('/api-sync', [AdminApiSyncController::class, 'index'])->name('api-sync.index');
+    Route::post('/api-sync/settings', [AdminApiSyncController::class, 'saveSettings'])->name('api-sync.settings');
+    Route::post('/api-sync/test', [AdminApiSyncController::class, 'testConnect'])->name('api-sync.test');
+    Route::get('/api-sync/records', [AdminApiSyncController::class, 'getLocalRecords'])->name('api-sync.records');
+    Route::delete('/api-sync/record/{type}/{id}', [AdminApiSyncController::class, 'deleteRecord'])->name('api-sync.delete-record');
+    Route::delete('/api-sync/clear/{type}', [AdminApiSyncController::class, 'clearType'])->name('api-sync.clear-type');
+    Route::post('/api-sync/sync-categories', [AdminApiSyncController::class, 'syncCategories'])->name('api-sync.sync-categories');
+    Route::post('/api-sync/sync-products', [AdminApiSyncController::class, 'syncProducts'])->name('api-sync.sync-products');
+    Route::post('/api-sync/sync-all', [AdminApiSyncController::class, 'syncAll'])->name('api-sync.sync-all');
+
     Route::view('/users', 'admin.users.index')->name('users.index')->middleware('permission:view_user');
     Route::view('/roles', 'admin.roles.index')->name('roles.index')->middleware('permission:view_role');
     Route::view('/permissions', 'admin.permissions.index')->name('permissions.index')->middleware('permission:view_permission');

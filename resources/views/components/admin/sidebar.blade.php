@@ -197,6 +197,19 @@
         </div>
         @endif
 
+        {{-- ── Integration ─────────────────────────────────────────────── --}}
+        <div class="mt-6">
+            <p class="px-3 text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Integration') }}</p>
+            <nav class="mt-3 space-y-2">
+                <a href="{{ route('admin.api-sync.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium {{ request()->routeIs('admin.api-sync.*') ? $activeClass : $inactiveClass }}">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {{ __('Get API / Sync') }}
+                </a>
+            </nav>
+        </div>
+
         @if ($can('view_user', 'view_role', 'view_permission', 'view_setting'))
         <div class="mt-6">
             <p class="px-3 text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Access') }}</p>
