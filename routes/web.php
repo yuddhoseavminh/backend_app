@@ -104,13 +104,14 @@ Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function ()
         return view('admin.orders.show', ['orderId' => $order->id]);
     })->name('orders.show')->middleware('permission:view_order,view_checking_pickup,view_tracking_order');
 
-    Route::view('/repairs', 'admin.repairs.index')->name('repairs.index');
+    Route::view('/repairs', 'admin.repairs.index')->name('repairs.index')->middleware('permission:view_repair');
+    Route::view('/repairs/create', 'admin.repairs.create')->name('repairs.create')->middleware('permission:create_repair');
     Route::get('/repairs/{repair}', function (\App\Models\RepairRequest $repair) {
         return view('admin.repairs.show', ['repairId' => $repair->id]);
-    })->name('repairs.show');
+    })->name('repairs.show')->middleware('permission:view_repair');
     Route::view('/support', 'admin.support.index')->name('support.index')->middleware('permission:view_support_inbox');
 
-    Route::view('/technicians', 'admin.technicians.index')->name('technicians.index');
+    Route::view('/technicians', 'admin.technicians.index')->name('technicians.index')->middleware('permission:view_technician');
 
     Route::view('/vouchers', 'admin.vouchers.index')->name('vouchers.index')->middleware('permission:view_voucher');
     Route::view('/vouchers/create', 'admin.vouchers.create')->name('vouchers.create')->middleware('permission:create_voucher');

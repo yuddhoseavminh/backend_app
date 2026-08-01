@@ -221,9 +221,15 @@
                             <label class="text-xs font-semibold text-slate-600 dark:text-slate-300" for="variant-ssd" id="variant-label-ssd">{{ __('SSD') }}</label>
                             <select id="variant-ssd" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200"></select>
                         </div>
-                        <div data-variant-field="color">
-                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-300" for="variant-color" id="variant-label-color">{{ __('Color') }}</label>
-                            <select id="variant-color" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200"></select>
+                        <div data-variant-field="color" class="relative">
+                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-300" id="variant-label-color">{{ __('Color') }}</label>
+                            <button type="button" id="variant-color-trigger" class="mt-1 flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200">
+                                <span id="variant-color-summary" class="truncate text-slate-400">{{ __('Select one or more colors') }}</span>
+                                <svg class="h-4 w-4 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="variant-color-dropdown" class="absolute inset-x-0 top-full z-20 mt-1 hidden max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
                         </div>
                         <div data-variant-field="condition">
                             <label class="text-xs font-semibold text-slate-600 dark:text-slate-300" for="variant-condition" id="variant-label-condition">{{ __('Condition') }}</label>
@@ -516,8 +522,12 @@
             const categorySelect = document.getElementById('category');
             const tagSelect = document.getElementById('tag');
             const productTypeGroup = document.getElementById('product-type-group');
+            const variantColorTrigger = document.getElementById('variant-color-trigger');
+            const variantColorDropdown = document.getElementById('variant-color-dropdown');
+            const variantColorSummary = document.getElementById('variant-color-summary');
 
             let masterOptions = {};
+            let selectedColors = [];
             let skuPreviewTimer = null;
             let skuPreviewRequestId = 0;
 
@@ -688,6 +698,7 @@
                         draft[VARIANT_FIELDS[key].payloadKey] = cleanText(select.value);
                     }
                 });
+                draft.color = selectedColors[0] || '';
 
                 return draft;
             }
@@ -741,6 +752,66 @@
                 clearTimeout(skuPreviewTimer);
                 skuPreviewTimer = setTimeout(refreshSkuPreview, 250);
             }
+
+            // ── Color multi-select (checkbox dropdown) ──────────────────
+            function updateColorSummary() {
+                if (!variantColorSummary) return;
+                if (!selectedColors.length) {
+                    variantColorSummary.textContent = @json(__('Select one or more colors'));
+                    variantColorSummary.classList.add('text-slate-400');
+                } else {
+                    variantColorSummary.textContent = selectedColors.join(', ');
+                    variantColorSummary.classList.remove('text-slate-400');
+                }
+            }
+
+            function renderColorOptions() {
+                if (!variantColorDropdown) return;
+                const options = masterOptions.color || [];
+                if (!options.length) {
+                    variantColorDropdown.innerHTML = '<p class="px-2 py-1.5 text-xs text-slate-400">' + @json(__('No colors available yet.')) + '</p>';
+                    return;
+                }
+                variantColorDropdown.innerHTML = options.map(function (value) {
+                    const checked = selectedColors.indexOf(value) !== -1 ? 'checked' : '';
+                    const escaped = escapeHtml(value);
+                    return '<label class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">'
+                        + '<input type="checkbox" data-color-option value="' + escaped + '" ' + checked + ' class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" />'
+                        + '<span>' + escaped + '</span>'
+                        + '</label>';
+                }).join('');
+            }
+
+            function closeColorDropdown() {
+                if (variantColorDropdown) variantColorDropdown.classList.add('hidden');
+            }
+
+            if (variantColorTrigger) {
+                variantColorTrigger.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    variantColorDropdown.classList.toggle('hidden');
+                });
+            }
+
+            if (variantColorDropdown) {
+                variantColorDropdown.addEventListener('change', function (event) {
+                    const checkbox = event.target.closest('[data-color-option]');
+                    if (!checkbox) return;
+                    if (checkbox.checked) {
+                        if (selectedColors.indexOf(checkbox.value) === -1) selectedColors.push(checkbox.value);
+                    } else {
+                        selectedColors = selectedColors.filter((value) => value !== checkbox.value);
+                    }
+                    updateColorSummary();
+                    updateVariantSkuPlaceholder();
+                });
+            }
+
+            document.addEventListener('click', function (event) {
+                if (!variantColorDropdown || variantColorDropdown.classList.contains('hidden')) return;
+                if (event.target.closest('#variant-color-trigger') || event.target.closest('#variant-color-dropdown')) return;
+                closeColorDropdown();
+            });
 
             function variantKey(item) {
                 return currentConfig().fields
@@ -922,6 +993,10 @@
                     const select = fieldSelect(key);
                     if (select) select.value = '';
                 });
+                selectedColors = [];
+                renderColorOptions();
+                updateColorSummary();
+                closeColorDropdown();
                 variantSku.value = '';
                 variantPrice.value = '';
                 variantStock.value = '';
@@ -977,7 +1052,7 @@
                 updateVariantSummary();
             }
 
-            function readVariantInput() {
+            function readVariantInput(colorValue) {
                 const config = currentConfig();
                 const payload = {
                     storage_capacity: '',
@@ -996,6 +1071,10 @@
                 };
 
                 config.fields.forEach(function (key) {
+                    if (key === 'color') {
+                        payload.color = cleanText(colorValue);
+                        return;
+                    }
                     payload[VARIANT_FIELDS[key].payloadKey] = cleanText(fieldSelect(key).value);
                 });
 
@@ -1034,6 +1113,9 @@
                     const select = fieldSelect(key);
                     if (select) select.value = cleanText(item[VARIANT_FIELDS[key].payloadKey]);
                 });
+                selectedColors = cleanText(item.color) ? [cleanText(item.color)] : [];
+                renderColorOptions();
+                updateColorSummary();
                 variantSku.value = cleanText(item.sku);
                 variantPrice.value = String(item.price ?? '');
                 variantStock.value = String(item.stock ?? '');
@@ -1043,26 +1125,39 @@
             }
 
             function addOrUpdateVariant() {
-                const result = readVariantInput();
-                if (result.error) {
-                    variantFormError.textContent = result.error;
-                    return;
-                }
-
-                const payload = result.value;
-                const duplicate = variants.some(function (item, index) {
-                    if (editIndex !== null && editIndex === index) {
-                        return false;
-                    }
-                    return variantKey(item) === variantKey(payload);
-                });
-
-                if (duplicate) {
-                    variantFormError.textContent = @json(__('This variant combination already exists.'));
-                    return;
-                }
+                const config = currentConfig();
+                const hasColorField = config.fields.indexOf('color') !== -1;
+                const colorRequired = hasColorField && config.required.indexOf('color') !== -1;
 
                 if (editIndex !== null) {
+                    if (hasColorField && selectedColors.length > 1) {
+                        variantFormError.textContent = @json(__('Select only one color when updating a variant.'));
+                        return;
+                    }
+                    if (colorRequired && selectedColors.length === 0) {
+                        variantFormError.textContent = @json(__('Color is required.'));
+                        return;
+                    }
+
+                    const result = readVariantInput(selectedColors[0] || '');
+                    if (result.error) {
+                        variantFormError.textContent = result.error;
+                        return;
+                    }
+
+                    const payload = result.value;
+                    const duplicate = variants.some(function (item, index) {
+                        if (index === editIndex) {
+                            return false;
+                        }
+                        return variantKey(item) === variantKey(payload);
+                    });
+
+                    if (duplicate) {
+                        variantFormError.textContent = @json(__('This variant combination already exists.'));
+                        return;
+                    }
+
                     const previous = variants[editIndex];
                     const merged = Object.assign({}, previous, payload);
                     if (!(payload.file instanceof File)) {
@@ -1072,8 +1167,72 @@
                         merged.image = previous.image || null;
                     }
                     variants[editIndex] = merged;
+
+                    resetVariantForm();
+                    renderVariantRows();
+                    return;
+                }
+
+                // Add mode — one variant is created per selected color, so picking
+                // several colors at once lists them all below for later per-row editing.
+                if (colorRequired && selectedColors.length === 0) {
+                    variantFormError.textContent = @json(__('Select at least one color.'));
+                    return;
+                }
+
+                const colorsToAdd = hasColorField && selectedColors.length ? selectedColors.slice() : [''];
+                const bulkAdd = colorsToAdd.length > 1;
+                const newPayloads = [];
+                const skipped = [];
+                let firstError = '';
+
+                colorsToAdd.forEach(function (color) {
+                    if (firstError) return;
+
+                    const result = readVariantInput(color);
+                    if (result.error) {
+                        firstError = result.error;
+                        return;
+                    }
+
+                    const payload = result.value;
+                    if (bulkAdd) {
+                        // A manually typed SKU can't be reused across multiple new
+                        // variants, so let the backend auto-generate one per color.
+                        payload.sku = '';
+                    }
+
+                    const isDuplicate = variants.some((item) => variantKey(item) === variantKey(payload))
+                        || newPayloads.some((item) => variantKey(item) === variantKey(payload));
+
+                    if (isDuplicate) {
+                        skipped.push(color || @json(__('default')));
+                        return;
+                    }
+
+                    newPayloads.push(payload);
+                });
+
+                if (firstError) {
+                    variantFormError.textContent = firstError;
+                    return;
+                }
+
+                if (!newPayloads.length) {
+                    variantFormError.textContent = skipped.length
+                        ? @json(__('These variant combinations already exist.'))
+                        : @json(__('Unable to add variant.'));
+                    return;
+                }
+
+                variants.push.apply(variants, newPayloads);
+
+                if (skipped.length) {
+                    variantFormError.textContent = @json(__('Added')) + ' ' + newPayloads.length + ' '
+                        + (newPayloads.length === 1 ? @json(__('variant')) : @json(__('variants'))) + '. '
+                        + @json(__('Skipped existing:')) + ' ' + skipped.join(', ');
                 } else {
-                    variants.push(payload);
+                    variantFormError.textContent = '';
                 }
 
                 resetVariantForm();
@@ -1442,6 +1601,10 @@
                         select.value = current;
                     }
                 });
+
+                selectedColors = selectedColors.filter((value) => (masterOptions.color || []).indexOf(value) !== -1);
+                renderColorOptions();
+                updateColorSummary();
             }
 
             // Options come from the Product Master (product attribute options).
