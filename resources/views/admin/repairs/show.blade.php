@@ -15,13 +15,17 @@
                     <select id="technician-select" class="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300"></select>
                     <button id="assign-technician" class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 shadow-sm hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">{{ __('Assign') }}</button>
                     <button id="auto-assign" class="inline-flex h-10 items-center rounded-xl bg-primary-600 px-4 text-sm font-semibold text-white shadow-sm">{{ __('Auto assign') }}</button>
+                    <button id="mark-delivered" class="inline-flex h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-40" disabled>{{ __('Mark Delivered') }}</button>
+                    <button id="cancel-job" class="inline-flex h-10 items-center rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-40" disabled>{{ __('Cancel Job') }}</button>
                 </div>
             </div>
             <div class="mt-5 grid gap-4 lg:grid-cols-3">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Customer') }}</p>
-                    <p id="repair-customer" class="mt-2 font-semibold text-slate-900 dark:text-white">--</p>
-                    <p id="repair-contact" class="text-xs text-slate-500">--</p>
+                    <div id="repair-customer-box" class="mt-2 space-y-1">
+                        <div id="repair-customer" class="font-bold text-slate-900 dark:text-white">--</div>
+                        <div id="repair-contact" class="text-xs text-slate-500">--</div>
+                    </div>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Device') }}</p>
@@ -32,14 +36,7 @@
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Status') }}</p>
                     <div class="mt-2 flex items-center gap-2">
                         <select id="status-select" class="h-9 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-600 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                            <option value="received">{{ __('Received') }}</option>
-                            <option value="waiting_diagnosis">{{ __('Waiting Diagnosis') }}</option>
-                            <option value="diagnosing">{{ __('Diagnosing') }}</option>
-                            <option value="waiting_approval">{{ __('Waiting Approval') }}</option>
-                            <option value="in_repair">{{ __('Repairing') }}</option>
-                            <option value="qc">{{ __('QC Testing') }}</option>
-                            <option value="ready">{{ __('Ready for Pickup') }}</option>
-                            <option value="completed">{{ __('Completed') }}</option>
+                            @include('admin.repairs._status-options')
                         </select>
                         <button id="status-update" class="inline-flex h-9 items-center rounded-xl bg-primary-600 px-3 text-xs font-semibold text-white">{{ __('Update') }}</button>
                     </div>
@@ -140,6 +137,7 @@
                             <div class="mt-4 flex flex-wrap items-center gap-2">
                                 <input id="invoice-tax" type="number" step="0.01" placeholder="{{ __('Tax') }}" class="h-9 w-28 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-600 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300" />
                                 <button id="generate-invoice" class="inline-flex h-9 items-center rounded-xl bg-primary-600 px-4 text-xs font-semibold text-white">{{ __('Generate') }}</button>
+                                <a href="{{ route('admin.repairs.invoice', $repairId) }}" class="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">{{ __('Open Invoice') }}</a>
                                 <span id="invoice-status" class="text-xs text-slate-500"></span>
                             </div>
                         </div>
@@ -167,14 +165,7 @@
                             <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">{{ __('Status update') }}</p>
                             <div class="mt-3 flex items-center gap-2">
                                 <select id="status-select-secondary" class="h-9 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-600 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                                    <option value="received">{{ __('Received') }}</option>
-                                    <option value="waiting_diagnosis">{{ __('Waiting Diagnosis') }}</option>
-                                    <option value="diagnosing">{{ __('Diagnosing') }}</option>
-                                    <option value="waiting_approval">{{ __('Waiting Approval') }}</option>
-                                    <option value="in_repair">{{ __('Repairing') }}</option>
-                                    <option value="qc">{{ __('QC Testing') }}</option>
-                                    <option value="ready">{{ __('Ready for Pickup') }}</option>
-                                    <option value="completed">{{ __('Completed') }}</option>
+                                    @include('admin.repairs._status-options')
                                 </select>
                                 <button id="status-update-secondary" class="inline-flex h-9 items-center rounded-xl bg-primary-600 px-3 text-xs font-semibold text-white">{{ __('Update') }}</button>
                             </div>
@@ -204,6 +195,30 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            function safeApiRequest(url, options) {
+                if (window.adminApi && typeof window.adminApi.request === 'function') {
+                    return window.adminApi.request(url, options);
+                }
+                function getCookie(name) {
+                    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+                    return match ? decodeURIComponent(match[2]) : null;
+                }
+                var opts = options || {};
+                var headers = Object.assign({ 'Accept': 'application/json' }, opts.headers || {});
+                var token = getCookie('XSRF-TOKEN');
+                if (token) {
+                    headers['X-XSRF-TOKEN'] = token;
+                }
+                return fetch(url, Object.assign({ credentials: 'include' }, opts, { headers: headers }));
+            }
+
+            async function safeEnsureCsrfCookie() {
+                if (window.adminApi && typeof window.adminApi.ensureCsrfCookie === 'function') {
+                    return window.adminApi.ensureCsrfCookie();
+                }
+                return fetch('/sanctum/csrf-cookie', { credentials: 'include' });
+            }
+
             var repairId = {{ $repairId }};
             var repairData = null;
             var tabs = document.querySelectorAll('.repair-tab');
@@ -265,9 +280,14 @@
                 });
             });
 
+            var initialTab = new URLSearchParams(window.location.search).get('tab');
+            if (initialTab && Array.from(tabs).some(function (tab) { return tab.dataset.tab === initialTab; })) {
+                switchTab(initialTab);
+            }
+
             async function loadRepair() {
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId);
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId);
                 if (!response.ok) {
                     document.getElementById('repair-subtitle').textContent = '{{ __('Unable to load repair.') }}';
                     return;
@@ -277,12 +297,25 @@
 
                 document.getElementById('repair-title').textContent = '{{ __('Repair') }} #' + repair.id;
                 document.getElementById('repair-subtitle').textContent = toTitle(repair.status) + ' - ' + toTitle(repair.service_type || '-');
-                document.getElementById('repair-customer').textContent = repair.customer ? (repair.customer.name || repair.customer.email || '-') : '-';
-                document.getElementById('repair-contact').textContent = repair.customer ? (repair.customer.email || repair.customer.phone || '-') : '-';
+                
+                var customer = repair.customer || {};
+                var appBadge = customer.is_app_user
+                    ? '<span class="ml-1.5 inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">📱 Mobile App Registered</span>'
+                    : '<span class="ml-1.5 inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">🏬 Walk-in Customer</span>';
+
+                document.getElementById('repair-customer').innerHTML = (customer.name || customer.email || '-') + appBadge;
+                
+                var contactDetails = [];
+                if (customer.phone) contactDetails.push('📞 ' + customer.phone);
+                if (customer.email) contactDetails.push('✉️ ' + customer.email);
+                document.getElementById('repair-contact').textContent = contactDetails.join(' · ') || '-';
+
                 document.getElementById('repair-device').textContent = repair.device_model || '-';
                 document.getElementById('repair-issue').textContent = repair.issue_type || '-';
-                document.getElementById('status-select').value = repair.status || 'received';
-                document.getElementById('status-select-secondary').value = repair.status || 'received';
+                document.getElementById('status-select').value = repair.status || 'new';
+                document.getElementById('status-select-secondary').value = repair.status || 'new';
+                document.getElementById('mark-delivered').disabled = repair.status !== 'ready_for_pickup';
+                document.getElementById('cancel-job').disabled = ['delivered', 'cancelled'].indexOf(repair.status) !== -1;
 
                 if (repair.intake) {
                     document.getElementById('imei_serial').value = repair.intake.imei_serial || '';
@@ -314,7 +347,7 @@
             }
 
             async function loadTechnicians() {
-                var response = await window.adminApi.request('/api/technicians?per_page=100');
+                var response = await safeApiRequest('/api/technicians?per_page=100');
                 if (!response.ok) {
                     return;
                 }
@@ -330,7 +363,7 @@
             }
 
             async function loadStatusTimeline() {
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/status-timeline');
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/status-timeline');
                 if (!response.ok) {
                     return;
                 }
@@ -347,7 +380,7 @@
             }
 
             async function loadChat() {
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/chat');
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/chat');
                 if (!response.ok) {
                     return;
                 }
@@ -369,8 +402,8 @@
                 if (!technicianId) {
                     return;
                 }
-                await window.adminApi.ensureCsrfCookie();
-                await window.adminApi.request('/api/repairs/' + repairId + '/assign-technician', {
+                await safeEnsureCsrfCookie();
+                await safeApiRequest('/api/repairs/' + repairId + '/assign-technician', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ technician_id: technicianId })
@@ -379,9 +412,23 @@
             });
 
             document.getElementById('auto-assign').addEventListener('click', async function () {
-                await window.adminApi.ensureCsrfCookie();
-                await window.adminApi.request('/api/repairs/' + repairId + '/auto-assign', { method: 'POST' });
+                await safeEnsureCsrfCookie();
+                await safeApiRequest('/api/repairs/' + repairId + '/auto-assign', { method: 'POST' });
                 loadRepair();
+            });
+
+            document.getElementById('mark-delivered').addEventListener('click', function () {
+                if (!confirm('{{ __('Confirm the device was handed back and payment was collected?') }}')) {
+                    return;
+                }
+                updateStatus('delivered', false);
+            });
+
+            document.getElementById('cancel-job').addEventListener('click', function () {
+                if (!confirm('{{ __('Cancel this repair job?') }}')) {
+                    return;
+                }
+                updateStatus('cancelled', true);
             });
 
             document.getElementById('status-update').addEventListener('click', function () {
@@ -395,8 +442,8 @@
                 if (!status) {
                     return;
                 }
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/status', {
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: status, force: !!force })
@@ -419,8 +466,8 @@
                     intake_photos: parseList(document.getElementById('intake_photos').value),
                     notes: document.getElementById('intake_notes').value.trim()
                 };
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/intake', {
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/intake', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -437,8 +484,8 @@
                     labor_cost: document.getElementById('labor_cost').value,
                     diagnostic_notes: document.getElementById('diagnostic_notes').value.trim()
                 };
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/diagnostic', {
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/diagnostic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -454,59 +501,41 @@
                     parts_cost: document.getElementById('quotation_parts').value,
                     labor_cost: document.getElementById('quotation_labor').value
                 };
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/quotation', {
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/quotation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 document.getElementById('quotation-status').textContent = response.ok ? '{{ __('Saved.') }}' : '{{ __('Unable to save.') }}';
                 loadRepair();
-                loadStatusTimeline();
             });
 
             document.getElementById('generate-invoice').addEventListener('click', async function () {
-                var taxValue = document.getElementById('invoice-tax').value;
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/invoice', {
+                var tax = document.getElementById('invoice-tax').value;
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/invoice', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tax: taxValue || 0 })
+                    body: JSON.stringify({ tax: tax || 0 })
                 });
-                document.getElementById('invoice-status').textContent = response.ok ? '{{ __('Invoice generated.') }}' : '{{ __('Unable to generate.') }}';
+                document.getElementById('invoice-status').textContent = response.ok ? '{{ __('Generated.') }}' : '{{ __('Unable to generate.') }}';
                 loadRepair();
-            });
-
-            document.getElementById('chat-form').addEventListener('submit', async function (event) {
-                event.preventDefault();
-                var payload = { message: document.getElementById('chat-message').value.trim() };
-                if (!payload.message) {
-                    return;
-                }
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                document.getElementById('chat-status').textContent = response.ok ? '{{ __('Sent.') }}' : '{{ __('Unable to send.') }}';
-                document.getElementById('chat-message').value = '';
-                loadChat();
             });
 
             document.getElementById('qc-form').addEventListener('submit', async function (event) {
                 event.preventDefault();
                 var results = {};
-                qcItems.forEach(function (item) {
-                    var select = document.getElementById('qc-item-' + item[0]);
-                    results[item[0]] = select ? select.value : 'na';
+                container = document.getElementById('qc-items');
+                container.querySelectorAll('select').forEach(function (select) {
+                    results[select.dataset.item] = select.value;
                 });
                 var payload = {
                     results: results,
                     notes: document.getElementById('qc_notes').value.trim()
                 };
-                await window.adminApi.ensureCsrfCookie();
-                var response = await window.adminApi.request('/api/repairs/' + repairId + '/qc', {
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/qc', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -515,8 +544,26 @@
                 loadRepair();
             });
 
-            switchTab('intake');
-            renderQcItems(null);
+            document.getElementById('chat-form').addEventListener('submit', async function (event) {
+                event.preventDefault();
+                var message = document.getElementById('chat-message').value.trim();
+                if (!message) {
+                    return;
+                }
+                await safeEnsureCsrfCookie();
+                var response = await safeApiRequest('/api/repairs/' + repairId + '/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                if (response.ok) {
+                    document.getElementById('chat-message').value = '';
+                    loadChat();
+                } else {
+                    document.getElementById('chat-status').textContent = '{{ __('Unable to send message.') }}';
+                }
+            });
+
             loadRepair();
             loadTechnicians();
             loadStatusTimeline();
